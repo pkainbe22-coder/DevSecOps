@@ -1,0 +1,9 @@
+<%-- Shared top bar. Expects session attrs: username, role. --%>
+<div class="topbar">
+  <div class="brand">DevSecOps Portal</div>
+  <div class="right">
+    <span class="badge ${sessionScope.role}">${sessionScope.role}</span>
+    <span>&nbsp;${sessionScope.username}</span>
+    <a href="${pageContext.request.contextPath}/logout">Sign out</a>
+  </div>
+</div>

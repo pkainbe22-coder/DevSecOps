@@ -1,0 +1,74 @@
+# DevSecOps Portal — infrastructure skeleton (M1 is yours to provision/configure).
+# Brings up MySQL, Gitea, Jenkins, SonarQube. Portal + staging Tomcat are built/run separately.
+# Secrets come from .env (gitignored). Copy .env.example -> .env first.
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: portal-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # Auto-creates portal + gitea DBs and the portal schema on first boot:
+      - ./db/00-init-databases.sql:/docker-entrypoint-initdb.d/00-init-databases.sql:ro
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  gitea:
+    image: gitea/gitea:1
+    container_name: portal-gitea
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      GITEA__database__DB_TYPE: mysql
+      GITEA__database__HOST: mysql:3306
+      GITEA__database__NAME: gitea
+      GITEA__database__USER: root
+      GITEA__database__PASSWD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3000:3000"
+      - "2222:22"   # git over ssh
+    volumes:
+      - gitea-data:/data
+
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: portal-jenkins
+    restart: unless-stopped
+    user: root   # so the pipeline can invoke the host Docker daemon for ZAP
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock   # ZAP stage runs via Docker
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: portal-sonarqube
+    restart: unless-stopped
+    # SonarQube needs ~2GB+ (bundled Elasticsearch). Size the host accordingly.
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-extensions:/opt/sonarqube/extensions
+
+volumes:
+  mysql-data:
+  gitea-data:
+  jenkins-data:
+  sonarqube-data:
+  sonarqube-extensions:
