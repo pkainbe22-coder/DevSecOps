@@ -15,8 +15,9 @@ pipeline {
 
   environment {
     SONAR_PROJECT_KEY = 'myapp'
-    PORTAL_URL        = 'http://portal:8081/api/scan-results'
-    STAGING_URL       = 'http://staging-app:8082'
+    // Compose service names + internal ports (Jenkins shares the compose network).
+    PORTAL_URL        = 'http://portal:8080/api/scan-results'
+    STAGING_URL       = 'http://staging:8080'
   }
 
   stages {

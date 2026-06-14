@@ -66,6 +66,36 @@ services:
       - sonarqube-data:/opt/sonarqube/data
       - sonarqube-extensions:/opt/sonarqube/extensions
 
+  # The portal itself — built from source (multi-stage Dockerfile) and served at ROOT.
+  # All config comes from .env; DB/host names use the compose service names.
+  portal:
+    build: ./portal
+    container_name: portal-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PORTAL_DB_URL: "jdbc:mysql://mysql:3306/portal?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      PORTAL_DB_USER: portal
+      PORTAL_DB_PASSWORD: ${PORTAL_DB_PASSWORD}
+      GITEA_BASE_URL: http://gitea:3000
+      GITEA_API_TOKEN: ${GITEA_API_TOKEN}
+      GITEA_OWNER: ${GITEA_OWNER}
+      SONAR_BASE_URL: http://sonarqube:9000
+      SONAR_API_TOKEN: ${SONAR_API_TOKEN}
+      PORTAL_API_TOKEN: ${PORTAL_API_TOKEN}
+    ports:
+      - "8081:8080"
+
+  # Empty staging Tomcat — the pipeline deploys your app's WAR here for the DAST scan.
+  staging:
+    image: tomcat:10-jdk17
+    container_name: portal-staging
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+
 volumes:
   mysql-data:
   gitea-data:

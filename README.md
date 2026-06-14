@@ -44,23 +44,28 @@ portal/                  Maven web app (Servlet + JSP + JDBC, Tomcat 10 / Jakart
 
 - JDK 17, Maven, Docker (for M1 infra).
 
-## Run it (M1 + M3)
+## Run it — one command
 
 ```bash
-# 1. Secrets
-cp .env.example .env          # edit values
-
-# 2. Infra (M1). Loads db/schema.sql into the 'portal' DB automatically.
-docker compose up -d mysql    # add gitea/jenkins/sonarqube when you reach M4/M5
-
-# 3. Build the portal WAR
-cd portal && mvn clean package # -> portal/target/portal.war
-
-# 4. Deploy to Tomcat 10 on :8081 (copy WAR to $CATALINA_BASE/webapps/),
-#    passing the env vars from .env to the Tomcat process.
+./setup.sh
 ```
 
-Then open `http://localhost:8081/portal/` and sign in.
+This checks Docker, creates `.env`, runs `docker compose up -d --build` (which builds the
+portal WAR and brings up MySQL + Gitea + Jenkins + SonarQube + portal + staging), waits for
+health, prints the Jenkins initial password, and lists the manual web-UI steps that remain.
+
+Then open **`http://localhost:8081/`** and sign in. After you generate the Gitea + SonarQube
+tokens (steps printed by the script), paste them into `.env` and run `docker compose up -d`
+to recreate the portal with them.
+
+### Services after `setup.sh`
+| URL | What |
+|-----|------|
+| http://localhost:8081/ | Portal (served at ROOT) |
+| http://localhost:3000/ | Gitea — run installer, create org/repo + token |
+| http://localhost:9000/ | SonarQube — change pw, create project `myapp` + token |
+| http://localhost:8080/ | Jenkins — install plugins, add tools/credentials |
+| http://localhost:8082/ | Staging Tomcat (DAST target) |
 
 ## Seed accounts (dev only — change in prod)
 
