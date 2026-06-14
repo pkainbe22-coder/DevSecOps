@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,10 +19,21 @@
           <tr><th>Commit</th><th>Message</th><th>Branch</th><th>Repo</th><th>When</th><th>Gitea</th></tr>
         </thead>
         <tbody>
-          <%-- M7 populates this from `commits` WHERE author = session username. --%>
+          <c:forEach var="c" items="${commits}">
+            <tr>
+              <td><code>${c.shortHash()}</code></td>
+              <td><c:out value="${c.message}"/></td>
+              <td>${c.branch}</td>
+              <td>${c.repo}</td>
+              <td>${c.committedDisplay()}</td>
+              <td><c:if test="${not empty c.giteaUrl}"><a href="${c.giteaUrl}" target="_blank">view</a></c:if></td>
+            </tr>
+          </c:forEach>
         </tbody>
       </table>
-      <div class="empty">No commits yet. Push to Gitea and they'll appear here after the pipeline runs.</div>
+      <c:if test="${empty commits}">
+        <div class="empty">No commits yet. Push to Gitea and they'll appear here after the pipeline runs.</div>
+      </c:if>
     </div>
   </div>
 </body>

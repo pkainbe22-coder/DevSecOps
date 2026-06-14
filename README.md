@@ -10,14 +10,20 @@ record results → role-based **approval gate** between Security and Operations.
 | Milestone | What | State |
 |-----------|------|-------|
 | M0 | Bootstrap: `CLAUDE.md`, `docker-compose.yml`, `.env` | ✅ |
-| M1 | Infra: MySQL, Gitea, Jenkins, SonarQube | ⬜ you provision |
+| M1 | Infra: MySQL, Gitea, Jenkins, SonarQube | ⬜ you provision (needs Docker + RAM) |
 | M2 | DB schema + seed users | ✅ |
-| M3 | Portal shell: auth + role filter + dashboards | ✅ |
-| M4 | Webhook + minimal pipeline | ⬜ |
-| M5 | Scanners (SAST/SCA/DAST) | ⬜ |
-| M6 | Pipeline data → portal (`/api/scan-results`) | ⬜ |
-| M7 | Workflow gate (approve/reject/deploy) | ⬜ |
-| M8 | Hardening | ⬜ |
+| M3 | Portal shell: auth + role filter + dashboards | ✅ built & compiles |
+| M4 | Webhook + minimal pipeline (`jenkins/Jenkinsfile.minimal`) | ◐ code written; job/webhook = you |
+| M5 | Scanners (`Jenkinsfile`, `deploy-staging.sh`) | ◐ code written; needs running infra |
+| M6 | Pipeline data → portal (`/api/scan-results` + Sonar/Gitea clients) | ◐ code written & compiles |
+| M7 | Workflow gate (approve/reject/deploy) | ◐ code written & compiles |
+| M8 | Hardening (idempotency, env secrets, server-side gate, README) | ◐ partial |
+
+**Legend:** ✅ done · ◐ code complete & compiles, needs running infra to verify · ⬜ yours.
+
+> The entire **code track compiles into `portal.war`**. What remains is the **infra track**
+> (M1) and the inherently-manual web-UI config (Gitea webhook, Jenkins job + plugins,
+> SonarQube token) — none of which can run without Docker and a host with ~2GB+ free RAM.
 
 ## Layout
 
