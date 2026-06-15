@@ -65,14 +65,21 @@ pipeline {
       steps {
         withCredentials([string(credentialsId: 'PORTAL_API_TOKEN', variable: 'PORTAL_TOKEN')]) {
           script {
-            def payload = """{
-              "commitHash": "${env.GIT_COMMIT}",
-              "author": "${env.GIT_AUTHOR_NAME}",
-              "branch": "${env.GIT_BRANCH}",
-              "repo": "${SONAR_PROJECT_KEY}",
-              "buildNumber": "${env.BUILD_NUMBER}",
-              "sonarProjectKey": "${SONAR_PROJECT_KEY}"
-            }"""
+            // Embed the SCA/DAST report JSON so the portal parses + stores them too.
+            // (SAST counts the portal pulls itself from the SonarQube Web API.)
+            def sca  = fileExists('dependency-check-report.json') ? readFile('dependency-check-report.json') : 'null'
+            def dast = fileExists('zap-report.json') ? readFile('zap-report.json') : 'null'
+            def core = groovy.json.JsonOutput.toJson([
+              commitHash     : env.GIT_COMMIT,
+              author         : env.GIT_AUTHOR_NAME,
+              branch         : env.GIT_BRANCH,
+              repo           : SONAR_PROJECT_KEY,
+              buildNumber    : env.BUILD_NUMBER,
+              sonarProjectKey: SONAR_PROJECT_KEY
+            ])
+            // Splice the raw report objects into a "reports" field without re-escaping them.
+            def payload = core.substring(0, core.length()-1) +
+                          ',"reports":{"sca":' + sca + ',"dast":' + dast + '}}'
             httpRequest httpMode: 'POST',
               url: env.PORTAL_URL,
               contentType: 'APPLICATION_JSON',

@@ -76,8 +76,19 @@ public class ScanResultsServlet extends HttpServlet {
                 Severity sast = sonar.vulnerabilityCounts(projectKey);
                 scanDao.upsert(commitId, "SAST", "SonarQube", sast, sonar.reportUrl(projectKey));
             }
-            // (SCA/DAST: parse dependency-check.json / zap-report.json in a later pass and
-            //  call scanDao.upsert(commitId, "SCA"/"DAST", ...). Hooks are ready.)
+            // SCA + DAST: Jenkins may embed the raw report JSON under "reports".
+            // Parsed here (in Java, testable) and stored as their own scan_results rows.
+            if (body.has("reports") && body.get("reports").isJsonObject()) {
+                JsonObject reports = body.getAsJsonObject("reports");
+                if (reports.has("sca") && reports.get("sca").isJsonObject()) {
+                    Severity sca = DependencyCheckParser.parse(reports.getAsJsonObject("sca"));
+                    scanDao.upsert(commitId, "SCA", "DependencyCheck", sca, null);
+                }
+                if (reports.has("dast") && reports.get("dast").isJsonObject()) {
+                    Severity dast = ZapParser.parse(reports.getAsJsonObject("dast"));
+                    scanDao.upsert(commitId, "DAST", "ZAP", dast, null);
+                }
+            }
 
             // 4. gate: PENDING approval
             approvalDao.ensurePending(commitId);

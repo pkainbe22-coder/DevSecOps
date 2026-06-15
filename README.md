@@ -15,7 +15,7 @@ record results → role-based **approval gate** between Security and Operations.
 | M3 | Portal shell: auth + role filter + dashboards | ✅ built & compiles |
 | M4 | Webhook + minimal pipeline (`jenkins/Jenkinsfile.minimal`) | ◐ code written; job/webhook = you |
 | M5 | Scanners (`Jenkinsfile`, `deploy-staging.sh`) | ◐ code written; needs running infra |
-| M6 | Pipeline data → portal (`/api/scan-results` + Sonar/Gitea clients) | ◐ code written & compiles |
+| M6 | Pipeline data → portal (`/api/scan-results` + Sonar/Gitea clients + SCA/DAST parsers) | ◐ code complete, unit-tested |
 | M7 | Workflow gate (approve/reject/deploy) | ◐ code written & compiles |
 | M8 | Hardening (idempotency, env secrets, server-side gate, README) | ◐ partial |
 
