@@ -93,20 +93,29 @@ public class CommitDao {
         }
     }
 
-    /** Developer view: this author's own commits, newest first. */
-    public List<Commit> findByAuthor(String author) {
-        String sql = "SELECT * FROM commits WHERE author=? ORDER BY committed_at DESC, id DESC";
+    /** Developer view: this author's own commits, newest first (paged). */
+    public List<Commit> findByAuthor(String author, int limit, int offset) {
+        String sql = "SELECT * FROM commits WHERE author=? ORDER BY committed_at DESC, id DESC LIMIT ? OFFSET ?";
         try (Connection conn = Db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, author);
+            ps.setInt(2, limit);
+            ps.setInt(3, offset);
             return mapList(ps);
         } catch (SQLException e) {
             throw new RuntimeException("findByAuthor failed", e);
         }
     }
 
-    /** Security view: all commits + summed severity + decision, newest first. */
-    public List<Commit> findAllForSecurity() {
+    /**
+     * Security view: all commits + summed severity + decision, newest first (paged).
+     * Optional decision filter: PENDING (incl. no-approval-row), APPROVED, REJECTED.
+     */
+    public List<Commit> findAllForSecurity(String decision, int limit, int offset) {
+        String having = "";
+        if ("PENDING".equals(decision))       having = "HAVING a.decision = 'PENDING' OR a.decision IS NULL\n";
+        else if ("APPROVED".equals(decision)) having = "HAVING a.decision = 'APPROVED'\n";
+        else if ("REJECTED".equals(decision)) having = "HAVING a.decision = 'REJECTED'\n";
         String sql = """
             SELECT c.*, a.decision, a.comment AS approval_comment,
                    COALESCE(SUM(s.critical),0) crit, COALESCE(SUM(s.high),0) hi,
@@ -115,13 +124,15 @@ public class CommitDao {
             LEFT JOIN deployment_approvals a ON a.commit_id = c.id
             LEFT JOIN scan_results s ON s.commit_id = c.id
             GROUP BY c.id, a.decision, a.comment
+            """ + having + """
             ORDER BY c.committed_at DESC, c.id DESC
+            LIMIT ? OFFSET ?
             """;
-        return runJoined(sql, null);
+        return runJoined(sql, limit, offset);
     }
 
-    /** Ops view: only APPROVED commits + their deploy status. */
-    public List<Commit> findApprovedForOps() {
+    /** Ops view: only APPROVED commits + their deploy status (paged). */
+    public List<Commit> findApprovedForOps(int limit, int offset) {
         String sql = """
             SELECT c.*, a.decision, a.comment AS approval_comment,
                    d.status AS deploy_status,
@@ -130,14 +141,16 @@ public class CommitDao {
             JOIN deployment_approvals a ON a.commit_id = c.id AND a.decision = 'APPROVED'
             LEFT JOIN deployments d ON d.commit_id = c.id
             ORDER BY c.committed_at DESC, c.id DESC
+            LIMIT ? OFFSET ?
             """;
-        return runJoined(sql, null);
+        return runJoined(sql, limit, offset);
     }
 
-    private List<Commit> runJoined(String sql, String param) {
+    private List<Commit> runJoined(String sql, int limit, int offset) {
         try (Connection conn = Db.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            if (param != null) ps.setString(1, param);
+            ps.setInt(1, limit);
+            ps.setInt(2, offset);
             try (ResultSet rs = ps.executeQuery()) {
                 List<Commit> out = new ArrayList<>();
                 while (rs.next()) {

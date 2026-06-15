@@ -45,6 +45,17 @@
       <c:if test="${empty commits}">
         <div class="empty">Nothing approved yet. Approved commits show up here ready to deploy.</div>
       </c:if>
+      <div class="pager">
+        <c:choose>
+          <c:when test="${hasPrev}"><a href="?page=${page-1}">‹ Prev</a></c:when>
+          <c:otherwise><span class="disabled">‹ Prev</span></c:otherwise>
+        </c:choose>
+        <span class="pgnum">Page ${page}</span>
+        <c:choose>
+          <c:when test="${hasNext}"><a href="?page=${page+1}">Next ›</a></c:when>
+          <c:otherwise><span class="disabled">Next ›</span></c:otherwise>
+        </c:choose>
+      </div>
     </div>
   </div>
 </body>

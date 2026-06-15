@@ -54,3 +54,18 @@ button.primary {
 .error { background: rgba(239,68,68,.12); color: #fca5a5; padding: 10px 12px;
   border-radius: 8px; font-size: 14px; margin-bottom: 14px; }
 .hint { color: var(--muted); font-size: 12px; text-align: center; margin-top: 16px; line-height: 1.6; }
+
+/* Pager + filters */
+.pager { display: flex; gap: 12px; align-items: center; justify-content: flex-end; margin-top: 16px; }
+.pager a, .pager span.disabled {
+  padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line);
+  font-size: 13px; text-decoration: none; color: var(--text);
+}
+.pager span.disabled { color: var(--muted); opacity: .5; }
+.pager .pgnum { border: 0; color: var(--muted); }
+.filterbar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+.filterbar a {
+  padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line);
+  font-size: 13px; text-decoration: none; color: var(--muted);
+}
+.filterbar a.active { background: rgba(56,189,248,.15); color: var(--dev); border-color: transparent; }

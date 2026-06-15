@@ -14,6 +14,12 @@
     <div class="card">
       <h1>Approval Queue</h1>
       <p class="sub">Every commit with its SAST / SCA / DAST findings. Approve or reject for deployment — this is the gate.</p>
+      <div class="filterbar">
+        <a href="?" class="${empty decision ? 'active' : ''}">All</a>
+        <a href="?decision=PENDING" class="${decision eq 'PENDING' ? 'active' : ''}">Pending</a>
+        <a href="?decision=APPROVED" class="${decision eq 'APPROVED' ? 'active' : ''}">Approved</a>
+        <a href="?decision=REJECTED" class="${decision eq 'REJECTED' ? 'active' : ''}">Rejected</a>
+      </div>
       <table>
         <thead>
           <tr>
@@ -53,8 +59,20 @@
         </tbody>
       </table>
       <c:if test="${empty commits}">
-        <div class="empty">No commits awaiting review. Findings flow in here automatically after each push (M6).</div>
+        <div class="empty">No commits match this filter. Findings flow in here automatically after each push (M6).</div>
       </c:if>
+      <c:set var="q" value="${empty decision ? '' : '&decision='.concat(decision)}"/>
+      <div class="pager">
+        <c:choose>
+          <c:when test="${hasPrev}"><a href="?page=${page-1}${q}">‹ Prev</a></c:when>
+          <c:otherwise><span class="disabled">‹ Prev</span></c:otherwise>
+        </c:choose>
+        <span class="pgnum">Page ${page}</span>
+        <c:choose>
+          <c:when test="${hasNext}"><a href="?page=${page+1}${q}">Next ›</a></c:when>
+          <c:otherwise><span class="disabled">Next ›</span></c:otherwise>
+        </c:choose>
+      </div>
     </div>
   </div>
 </body>
