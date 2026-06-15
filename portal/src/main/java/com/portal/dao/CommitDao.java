@@ -69,6 +69,18 @@ public class CommitDao {
         ps.setTimestamp(7, c.committedAt == null ? null : Timestamp.valueOf(c.committedAt));
     }
 
+    public String findHashById(int id) {
+        try (Connection conn = Db.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT commit_hash FROM commits WHERE id=?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("findHashById failed", e);
+        }
+    }
+
     public Integer findIdByHash(String hash) {
         try (Connection conn = Db.getConnection();
              PreparedStatement ps = conn.prepareStatement("SELECT id FROM commits WHERE commit_hash=?")) {

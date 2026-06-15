@@ -1,6 +1,8 @@
 package com.portal.auth;
 
+import com.portal.api.JenkinsClient;
 import com.portal.dao.ApprovalDao;
+import com.portal.dao.CommitDao;
 import com.portal.dao.DeploymentDao;
 import com.portal.util.Env;
 
@@ -22,6 +24,8 @@ public class OpsActionServlet extends HttpServlet {
 
     private final ApprovalDao approvalDao = new ApprovalDao();
     private final DeploymentDao deploymentDao = new DeploymentDao();
+    private final CommitDao commitDao = new CommitDao();
+    private final JenkinsClient jenkins = new JenkinsClient();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -43,9 +47,18 @@ public class OpsActionServlet extends HttpServlet {
         }
 
         String env = Env.get("DEPLOY_ENVIRONMENT", "production");
-        // (Optional) trigger Jenkins remote build job here via JENKINS_* env vars.
-        // Kept as a status record for now; wire the httpRequest in M7 stretch / M8.
-        deploymentDao.record(commitId, "DEPLOYED", env, userId == null ? 0 : userId);
+
+        // Trigger the Jenkins deploy job when configured. If Jenkins isn't wired up,
+        // record a manual DEPLOYED entry. If the trigger was attempted but rejected,
+        // record FAILED so Ops sees it didn't go out.
+        String status;
+        if (jenkins.isConfigured()) {
+            String hash = commitDao.findHashById(commitId);
+            status = jenkins.triggerDeploy(hash, env) ? "DEPLOYED" : "FAILED";
+        } else {
+            status = "DEPLOYED";   // no remote job configured — manual record
+        }
+        deploymentDao.record(commitId, status, env, userId == null ? 0 : userId);
 
         resp.sendRedirect(req.getContextPath() + "/ops/dashboard");
     }
