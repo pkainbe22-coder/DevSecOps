@@ -64,6 +64,13 @@
       <version>5.10.2</version>
       <scope>test</scope>
     </dependency>
+    <!-- In-memory DB (MySQL compat mode) for DAO/gate-logic tests. -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>2.2.224</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

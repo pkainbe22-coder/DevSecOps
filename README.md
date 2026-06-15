@@ -21,6 +21,9 @@ record results → role-based **approval gate** between Security and Operations.
 
 **Legend:** ✅ done · ◐ code complete & compiles, needs running infra to verify · ⬜ yours.
 
+**Tests:** `cd portal && mvn test` — 15 tests (parsers + the approval-gate logic on an
+in-memory H2 DB): approved→Ops, rejected/pending→never, idempotency, filter, pagination.
+
 > The entire **code track compiles into `portal.war`**. What remains is the **infra track**
 > (M1) and the inherently-manual web-UI config (Gitea webhook, Jenkins job + plugins,
 > SonarQube token) — none of which can run without Docker and a host with ~2GB+ free RAM.
