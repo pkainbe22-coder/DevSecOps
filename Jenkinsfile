@@ -14,7 +14,7 @@ pipeline {
   tools { maven 'Maven3' }
 
   environment {
-    SONAR_PROJECT_KEY = 'myapp'
+    SONAR_PROJECT_KEY = 'my-app'   // matches the Gitea repo praks/my-app
     // Compose service names + internal ports (Jenkins shares the compose network).
     PORTAL_URL        = 'http://portal:8080/api/scan-results'
     STAGING_URL       = 'http://staging:8080'
