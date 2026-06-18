@@ -1,0 +1,71 @@
+// Full DevSecOps pipeline: build -> SAST -> SCA -> deploy staging -> DAST -> report.
+pipeline {
+  agent any
+  tools { maven 'Maven3' }
+  stages {
+    stage('Checkout') { steps { checkout scm } }
+    stage('Build')    { steps { sh 'mvn -B clean package -DskipTests' } }
+    stage('SAST - SonarQube') {
+      steps {
+        withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
+          sh '''mvn -B sonar:sonar -Dsonar.projectKey=my-app \
+                -Dsonar.host.url=http://sonarqube:9000 -Dsonar.token=$SONAR_TOKEN'''
+        }
+      }
+    }
+    stage('SCA - Dependency-Check') {
+      steps {
+        withCredentials([string(credentialsId: 'NVD_API_KEY', variable: 'NVD_API_KEY')]) {
+          // First run downloads the NVD database into the persistent depcheck-data volume.
+          sh '''
+            docker volume create depcheck-data >/dev/null 2>&1 || true
+            docker run --rm --volumes-from portal-jenkins \
+              -v depcheck-data:/usr/share/dependency-check/data \
+              owasp/dependency-check:latest \
+              --scan /var/jenkins_home/workspace/my-app/target \
+              --format JSON \
+              --out /var/jenkins_home/workspace/my-app \
+              --nvdApiKey $NVD_API_KEY --prettyPrint || true
+            echo "dc report bytes: $(wc -c < dependency-check-report.json 2>/dev/null || echo 0)"
+          '''
+        }
+      }
+    }
+    stage('Deploy to Staging') {
+      steps {
+        sh '''docker cp target/my-app.war portal-staging:/usr/local/tomcat/webapps/my-app.war
+              sleep 15'''
+      }
+    }
+    stage('DAST - ZAP') {
+      steps {
+        sh '''
+          docker volume create zapwrk >/dev/null 2>&1 || true
+          docker run --rm -v zapwrk:/wrk alpine chmod 777 /wrk
+          CID=$(docker run -d --network devsecops-portal_default -v zapwrk:/zap/wrk \
+                ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://staging:8080/my-app/ -J zap-report.json)
+          docker wait "$CID" || true
+          docker rm "$CID" || true
+          docker run --rm -v zapwrk:/wrk alpine cat /wrk/zap-report.json > zap-report.json || echo '{}' > zap-report.json
+        '''
+      }
+    }
+    stage('Report to Portal') {
+      steps {
+        withCredentials([string(credentialsId: 'PORTAL_API_TOKEN', variable: 'PORTAL_TOKEN')]) {
+          script {
+            def author = sh(script: 'git log -1 --pretty=%an', returnStdout: true).trim()
+            def sca  = (fileExists('dependency-check-report.json') ? readFile('dependency-check-report.json').trim() : ''); if (!sca)  sca  = 'null'
+            def dast = (fileExists('zap-report.json') ? readFile('zap-report.json').trim() : ''); if (!dast) dast = 'null'
+            def core = groovy.json.JsonOutput.toJson([commitHash: env.GIT_COMMIT, author: author,
+              branch: 'main', repo: 'my-app', buildNumber: env.BUILD_NUMBER, sonarProjectKey: 'my-app'])
+            def payload = core.substring(0, core.length()-1) + ',"reports":{"sca":' + sca + ',"dast":' + dast + '}}'
+            httpRequest httpMode: 'POST', url: 'http://portal:8080/api/scan-results',
+              contentType: 'APPLICATION_JSON',
+              customHeaders: [[name: 'X-Portal-Token', value: PORTAL_TOKEN]], requestBody: payload
+          }
+        }
+      }
+    }
+  }
+}
