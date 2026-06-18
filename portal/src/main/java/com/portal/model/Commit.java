@@ -30,4 +30,21 @@ public class Commit {
     }
 
     public int totalFindings() { return critical + high + medium + low; }
+
+    // Getters — JSTL EL (${c.author}) needs JavaBean accessors, not public fields.
+    public int getId() { return id; }
+    public String getCommitHash() { return commitHash; }
+    public String getAuthor() { return author; }
+    public String getMessage() { return message; }
+    public String getBranch() { return branch; }
+    public String getRepo() { return repo; }
+    public String getGiteaUrl() { return giteaUrl; }
+    public LocalDateTime getCommittedAt() { return committedAt; }
+    public int getCritical() { return critical; }
+    public int getHigh() { return high; }
+    public int getMedium() { return medium; }
+    public int getLow() { return low; }
+    public String getDecision() { return decision; }
+    public String getApprovalComment() { return approvalComment; }
+    public String getDeployStatus() { return deployStatus; }
 }

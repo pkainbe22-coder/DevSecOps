@@ -29,11 +29,14 @@ pipeline {
       steps { sh 'mvn -B clean package -DskipTests' }
     }
 
-    // M5a — SAST
+    // M5a — SAST. Token passed via a Jenkins credential (proven approach — no
+    // global 'MySonarServer' config needed). Single-quoted sh keeps the token
+    // out of the build log.
     stage('SAST - SonarQube') {
       steps {
-        withSonarQubeEnv('MySonarServer') {
-          sh "mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY}"
+        withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
+          sh '''mvn -B sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                -Dsonar.host.url=http://sonarqube:9000 -Dsonar.token=$SONAR_TOKEN'''
         }
       }
     }
