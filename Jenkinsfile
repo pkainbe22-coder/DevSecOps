@@ -49,16 +49,30 @@ pipeline {
       }
     }
 
-    // M5c — deploy the built WAR to the staging Tomcat
+    // M5c — deploy the built WAR to the staging Tomcat container via the Docker CLI.
+    // (docker cp streams the file through the API, so it works from inside Jenkins.)
     stage('Deploy to Staging') {
-      steps { sh './deploy-staging.sh' }
+      steps {
+        sh '''docker cp target/*.war portal-staging:/usr/local/tomcat/webapps/my-app.war
+              sleep 15'''
+      }
     }
 
-    // M5d — DAST against the running staging app. baseline first; only scan what you own.
+    // M5d — DAST against the running staging app. ZAP needs /zap/wrk mounted+writable;
+    // we use a named volume (chmod 777, ZAP runs as uid 1000), join the compose network
+    // to reach 'staging', then copy the report into the workspace. baseline = only scan
+    // what you own.
     stage('DAST - ZAP') {
       steps {
-        sh '''docker run --rm -v "$(pwd)":/zap/wrk:rw ghcr.io/zaproxy/zaproxy \
-              zap-baseline.py -t ${STAGING_URL} -J zap-report.json || true'''
+        sh '''
+          docker volume create zapwrk >/dev/null 2>&1 || true
+          docker run --rm -v zapwrk:/wrk alpine chmod 777 /wrk
+          CID=$(docker run -d --network devsecops-portal_default -v zapwrk:/zap/wrk \
+                ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://staging:8080/my-app/ -J zap-report.json)
+          docker wait "$CID" || true
+          docker rm "$CID" || true
+          docker run --rm -v zapwrk:/wrk alpine cat /wrk/zap-report.json > zap-report.json || echo '{}' > zap-report.json
+        '''
       }
     }
 
