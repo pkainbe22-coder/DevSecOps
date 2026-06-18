@@ -42,7 +42,7 @@ services:
       - gitea-data:/data
 
   jenkins:
-    image: jenkins/jenkins:lts-jdk17
+    build: ./jenkins   # jenkins/jenkins:lts-jdk17 + Docker CLI (for the ZAP/DAST stage)
     container_name: portal-jenkins
     restart: unless-stopped
     user: root   # so the pipeline can invoke the host Docker daemon for ZAP
