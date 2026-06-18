@@ -1,0 +1,65 @@
+<%-- Professional app shell: sidebar + topbar. Expects EL vars: pageTitle, pageCrumb.
+     Reads sessionScope.role / username. --%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${pageTitle} · DevSecOps Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <span class="name">DevSecOps<small>Governance Portal</small></span>
+    </div>
+
+    <div class="nav-label">Workspace</div>
+    <nav class="nav">
+      <c:if test="${sessionScope.role eq 'DEVELOPER'}">
+        <a class="active" href="${pageContext.request.contextPath}/developer/dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> My Commits</a>
+      </c:if>
+      <c:if test="${sessionScope.role eq 'SECURITY'}">
+        <a class="active" href="${pageContext.request.contextPath}/security/dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Approval Queue</a>
+      </c:if>
+      <c:if test="${sessionScope.role eq 'OPERATIONS'}">
+        <a class="active" href="${pageContext.request.contextPath}/ops/dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Deployments</a>
+      </c:if>
+    </nav>
+
+    <div class="nav-label">Pipeline</div>
+    <nav class="nav">
+      <a href="http://localhost:8080/" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg> Jenkins</a>
+      <a href="http://localhost:9000/" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4m8-12-4 16"/></svg> SonarQube</a>
+      <a href="http://localhost:3001/" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M1.05 12H7m10 0h5.95"/></svg> Gitea</a>
+    </nav>
+
+    <div class="spacer"></div>
+    <div class="userbox">
+      <span class="avatar">${fn:toUpperCase(fn:substring(sessionScope.username,0,1))}</span>
+      <span class="who"><b>${sessionScope.username}</b><span>${sessionScope.role}</span></span>
+      <a class="out" href="${pageContext.request.contextPath}/logout" title="Sign out">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1>${pageTitle}</h1>
+        <div class="crumb">${pageCrumb}</div>
+      </div>
+      <div class="grow"></div>
+      <span class="role-chip ${sessionScope.role}">${sessionScope.role}</span>
+    </header>
+    <div class="content">

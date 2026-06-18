@@ -78,8 +78,12 @@ public class DashboardServlets {
         }
     }
 
-    /** Root "/" -> login (or the user's dashboard if already authenticated). */
-    @WebServlet(name = "RootServlet", urlPatterns = {"/"})
+    /**
+     * Context root -> login (or the user's dashboard if already authenticated).
+     * Mapped to "" (exact context root), NOT "/" — "/" is the default servlet and
+     * would swallow static assets like /assets/style.css.
+     */
+    @WebServlet(name = "RootServlet", urlPatterns = {""})
     public static class Root extends HttpServlet {
         @Override protected void doGet(HttpServletRequest req, HttpServletResponse resp)
                 throws IOException {
