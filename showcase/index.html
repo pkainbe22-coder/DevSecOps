@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DevSecOps Code Governance Portal</title>
+<meta name="description" content="A web portal on a CI/CD pipeline that auto-scans every commit (SAST · SCA · DAST) and gates deployment behind a Security approval.">
+<link rel="icon" href="tiet.jpg">
+<style>
+  :root{
+    --ink:#0b0f17; --panel:#131927; --panel2:#1b2234; --line:#2a3450;
+    --cyan:#2dd4ee; --ind:#818cf8; --green:#34d399; --amber:#fbbf56; --red:#f4637a;
+    --text:#e9eef8; --muted:#8f9bb7; --dim:#5f6a87;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--ink);color:var(--text);
+       line-height:1.6;-webkit-font-smoothing:antialiased;
+       background-image:radial-gradient(900px 500px at 85% -5%,rgba(129,140,248,.16),transparent 60%),
+                        radial-gradient(700px 500px at -10% 10%,rgba(45,212,238,.10),transparent 55%);}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  .accent{background:linear-gradient(90deg,var(--cyan),var(--ind));-webkit-background-clip:text;background-clip:text;color:transparent}
+  /* nav */
+  nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);background:rgba(11,15,23,.7);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:18px;height:60px}
+  nav .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+  nav .brand img{width:30px;height:30px;border-radius:7px;background:#fff;padding:3px}
+  nav .links{margin-left:auto;display:flex;gap:22px;font-size:14px;color:var(--muted)}
+  nav .links a:hover{color:var(--text)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:11px;font-weight:700;font-size:14px;
+       border:1px solid var(--line);background:var(--panel2);transition:.15s;cursor:pointer}
+  .btn:hover{border-color:var(--ind);transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(135deg,var(--cyan),var(--ind));color:#05121b;border:0;box-shadow:0 12px 28px -10px rgba(129,140,248,.6)}
+  /* hero */
+  header{padding:74px 0 40px;text-align:center}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.22em;color:var(--cyan);
+           border:1px solid var(--line);padding:7px 14px;border-radius:999px;background:var(--panel)}
+  h1{font-size:clamp(34px,6vw,62px);font-weight:800;line-height:1.05;margin:22px 0 0;letter-spacing:-1.5px}
+  .sub{max-width:660px;margin:18px auto 0;color:var(--muted);font-size:18px}
+  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:46px 0}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 18px;position:relative;overflow:hidden}
+  .stat::before{content:"";position:absolute;top:0;left:0;width:100%;height:3px;background:var(--c,var(--cyan))}
+  .stat .n{font-size:38px;font-weight:800;color:var(--c,var(--cyan));letter-spacing:-1px}
+  .stat .l{font-size:13px;color:var(--text);font-weight:700;margin-top:6px}
+  .stat .s{font-size:12px;color:var(--muted)}
+  /* sections */
+  section{padding:34px 0}
+  h2{font-size:13px;font-weight:800;letter-spacing:.16em;color:var(--cyan);text-transform:uppercase}
+  .lead{font-size:26px;font-weight:800;margin:8px 0 22px;letter-spacing:-.5px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px}
+  .card.bar{border-top:3px solid var(--c,var(--cyan))}
+  .card h3{font-size:17px;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:15px}
+  /* pipeline */
+  .flow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+  .node{display:flex;flex-direction:column;align-items:center;gap:7px}
+  .dot{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#05121b;
+       background:var(--c,var(--cyan))}
+  .node span{font-size:12.5px;font-weight:700;color:var(--text)}
+  .conn{width:26px;height:2px;background:linear-gradient(90deg,var(--cyan),var(--ind));border-radius:2px}
+  .note{text-align:center;color:var(--dim);font-size:13px;margin-top:16px}
+  /* features */
+  .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .feat .card{display:flex;gap:14px;align-items:flex-start}
+  .ic{width:42px;height:42px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;font-size:20px;background:var(--c,var(--cyan));color:#05121b}
+  .feat h3{font-size:15px;margin:0}
+  .feat p{font-size:13px;margin-top:2px}
+  /* poster */
+  .poster{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:center}
+  .poster img{width:100%;border-radius:14px;border:1px solid var(--line);box-shadow:0 30px 60px -30px #000}
+  /* chips */
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .chip{padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);font-size:13px;font-weight:700;color:var(--cyan)}
+  /* demo box */
+  .demo{background:linear-gradient(135deg,rgba(45,212,238,.10),rgba(129,140,248,.10));border:1px solid var(--line);
+        border-radius:18px;padding:34px;text-align:center}
+  .creds{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .cred{background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+  .cred b{color:var(--cyan)}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding:30px 0;text-align:center;color:var(--muted);font-size:14px}
+  footer .grad{height:2px;background:linear-gradient(90deg,var(--cyan),var(--ind));margin-bottom:24px}
+  @media(max-width:780px){.stats{grid-template-columns:repeat(2,1fr)}.grid2,.poster{grid-template-columns:1fr}.feat{grid-template-columns:1fr}.links{display:none}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="#"><img src="tiet.jpg" alt="TIET"> DevSecOps Portal</a>
+  <div class="links">
+    <a href="#how">How it works</a><a href="#features">Features</a>
+    <a href="#stack">Stack</a><a href="#demo">Live demo</a>
+  </div>
+  <a class="btn primary" href="https://github.com/pkainbe22-coder/DevSecOps" target="_blank">GitHub ↗</a>
+</div></nav>
+
+<header><div class="wrap">
+  <span class="eyebrow">DEVSECOPS · CI/CD SECURITY GOVERNANCE</span>
+  <h1>DevSecOps Code<br><span class="accent">Governance Portal</span></h1>
+  <p class="sub">A web portal on top of a CI/CD pipeline that automatically scans every commit
+     (SAST · SCA · DAST) and gates deployment behind an explicit Security approval — one push-to-deploy loop.</p>
+  <div class="cta">
+    <a class="btn primary" id="demoBtn" href="#demo">▶ Live Demo</a>
+    <a class="btn" href="https://github.com/pkainbe22-coder/DevSecOps" target="_blank">View Source</a>
+    <a class="btn" href="poster.pdf" target="_blank">Download Poster</a>
+    <a class="btn" href="report.pdf" target="_blank">Project Report</a>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat" style="--c:var(--cyan)"><div class="n">3</div><div class="l">Scan types</div><div class="s">SAST · SCA · DAST</div></div>
+    <div class="stat" style="--c:var(--ind)"><div class="n">3</div><div class="l">Roles</div><div class="s">Dev · Sec · Ops</div></div>
+    <div class="stat" style="--c:var(--green)"><div class="n">6</div><div class="l">Services</div><div class="s">fully dockerized</div></div>
+    <div class="stat" style="--c:var(--amber)"><div class="n">100%</div><div class="l">Auto-scanned</div><div class="s">every push</div></div>
+  </div>
+</div>
+
+<section class="wrap"><h2>The idea</h2><div class="lead">Security review that keeps up with shipping.</div>
+  <div class="grid2">
+    <div class="card bar" style="--c:var(--red)"><h3>The problem</h3>
+      <p>Scanner findings stay scattered across tools, and there's no enforced checkpoint between development, security, and deployment — so risky code reaches production.</p></div>
+    <div class="card bar" style="--c:var(--cyan)"><h3>The solution</h3>
+      <p>Every push is auto-scanned, findings are unified into one dashboard, and only Security-approved commits can be deployed — every decision recorded and auditable.</p></div>
+  </div>
+</section>
+
+<section class="wrap" id="how"><h2>How it works</h2><div class="lead">Automated commit lifecycle</div>
+  <div class="flow">
+    <div class="node"><div class="dot" style="--c:var(--cyan)">1</div><span>Push</span></div><div class="conn"></div>
+    <div class="node"><div class="dot" style="--c:var(--cyan)">2</div><span>Build</span></div><div class="conn"></div>
+    <div class="node"><div class="dot" style="--c:var(--cyan)">3</div><span>Scan</span></div><div class="conn"></div>
+    <div class="node"><div class="dot" style="--c:var(--ind)">4</div><span>Report</span></div><div class="conn"></div>
+    <div class="node"><div class="dot" style="--c:var(--ind)">5</div><span>Review</span></div><div class="conn"></div>
+    <div class="node"><div class="dot" style="--c:var(--green)">6</div><span>Approve</span></div><div class="conn"></div>
+    <div class="node"><div class="dot" style="--c:var(--green)">7</div><span>Deploy</span></div>
+  </div>
+  <p class="note">Scan = SonarQube (SAST) + OWASP Dependency-Check (SCA) + OWASP ZAP (DAST), run automatically on every push.</p>
+</section>
+
+<section class="wrap" id="features"><h2>What it does</h2><div class="lead">Built for governance, not just scanning.</div>
+  <div class="feat">
+    <div class="card"><div class="ic" style="--c:var(--cyan)">⚡</div><div><h3>Auto-triggered</h3><p>Gitea webhook → Jenkins build on every push.</p></div></div>
+    <div class="card"><div class="ic" style="--c:var(--ind)">🔍</div><div><h3>3 scanners unified</h3><p>SAST, SCA &amp; DAST normalized to one severity model.</p></div></div>
+    <div class="card"><div class="ic" style="--c:var(--green)">🛡️</div><div><h3>Approval gate</h3><p>Only Security-approved commits can deploy.</p></div></div>
+    <div class="card"><div class="ic" style="--c:var(--ind)">👥</div><div><h3>Role-based access</h3><p>Server-enforced Developer · Security · Operations views.</p></div></div>
+    <div class="card"><div class="ic" style="--c:var(--cyan)">📦</div><div><h3>Dockerized</h3><p>The whole stack runs from one Docker Compose file.</p></div></div>
+    <div class="card"><div class="ic" style="--c:var(--green)">✅</div><div><h3>Auditable</h3><p>Every approval, rejection &amp; deployment is logged.</p></div></div>
+  </div>
+</section>
+
+<section class="wrap"><h2>Architecture</h2><div class="lead">Pipeline &amp; scanning → portal &amp; governance.</div>
+  <div class="poster">
+    <img src="poster.png" alt="DevSecOps Portal project poster">
+    <div>
+      <p style="color:var(--muted);font-size:16px">A Gitea push fires a Jenkins pipeline that builds the code and runs all three scanners.
+      Results are POSTed to the portal's REST API and written to MySQL. The Security team reviews findings and
+      approves or rejects each commit; only approved commits reach the Operations deployment queue.</p>
+      <div class="cta" style="justify-content:flex-start;margin-top:22px">
+        <a class="btn" href="poster.pdf" target="_blank">Full poster (PDF)</a>
+        <a class="btn" href="report.pdf" target="_blank">Midway report (PDF)</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="stack"><h2>Built with</h2><div class="lead">A real, production-shaped stack.</div>
+  <div class="chips">
+    <span class="chip">Java</span><span class="chip">Servlets / JSP</span><span class="chip">Apache Tomcat 10</span>
+    <span class="chip">MySQL</span><span class="chip">BCrypt</span><span class="chip">Jenkins</span><span class="chip">Gitea</span>
+    <span class="chip">SonarQube</span><span class="chip">OWASP Dependency-Check</span><span class="chip">OWASP ZAP</span>
+    <span class="chip">Docker Compose</span><span class="chip">Maven</span><span class="chip">JUnit</span>
+  </div>
+</section>
+
+<section class="wrap" id="demo"><div class="demo">
+  <h2>Live demo</h2><div class="lead" style="margin-bottom:8px">Try the portal yourself</div>
+  <p style="color:var(--muted)">A self-contained build of the portal with seeded demo data — log in and explore all three role dashboards.</p>
+  <div class="cta"><a class="btn primary" id="demoLaunch" href="#" target="_blank">▶ Open the live demo</a></div>
+  <div class="creds">
+    <div class="cred"><b>Developer</b> &nbsp; praks / praks123</div>
+    <div class="cred"><b>Security</b> &nbsp; sec / sec123</div>
+    <div class="cred"><b>Operations</b> &nbsp; ops / ops123</div>
+  </div>
+</div></section>
+
+<footer><div class="grad"></div><div class="wrap">
+  <strong>DevSecOps Code Governance Portal</strong> &nbsp;·&nbsp; Prakriti Kain · 102203237<br>
+  Computer Science &amp; Engineering Department · Thapar Institute of Engineering &amp; Technology, Patiala<br>
+  <span style="color:var(--dim)">Faculty Mentor: Dr. Sachin Kansal &nbsp;·&nbsp; Industrial Mentor: Mr. Bharat Panwar (BHEL)</span>
+</div></footer>
+
+<script>
+  // Live-demo URL is injected here once the portal is deployed.
+  var DEMO_URL = "";   // e.g. "https://devsecops-portal-demo.onrender.com"
+  if (DEMO_URL) {
+    document.getElementById('demoLaunch').href = DEMO_URL;
+    document.getElementById('demoBtn').href = DEMO_URL;
+    document.getElementById('demoBtn').target = "_blank";
+  } else {
+    document.getElementById('demoLaunch').textContent = "Live demo link coming soon";
+  }
+</script>
+</body>
+</html>
