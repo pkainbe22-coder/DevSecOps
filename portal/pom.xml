@@ -64,12 +64,13 @@
       <version>5.10.2</version>
       <scope>test</scope>
     </dependency>
-    <!-- In-memory DB (MySQL compat mode) for DAO/gate-logic tests. -->
+    <!-- H2 (MySQL compat mode): used for DAO/gate-logic tests AND the self-contained
+         demo deployment (DEMO_MODE) so the portal can run with no external MySQL. -->
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <version>2.2.224</version>
-      <scope>test</scope>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 

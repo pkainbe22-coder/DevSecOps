@@ -1,0 +1,20 @@
+# One-click deploy of the self-contained DEMO portal to Render (free tier).
+# Connect this repo at https://render.com -> New -> Blueprint. Builds demo/Dockerfile
+# (portal + embedded H2, seeded demo data). No external DB/Gitea/Jenkins/SonarQube needed.
+services:
+  - type: web
+    name: devsecops-portal-demo
+    runtime: docker
+    dockerfilePath: ./demo/Dockerfile
+    dockerContext: .
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: DEMO_MODE
+        value: "true"
+      - key: PORTAL_DB_URL
+        value: "jdbc:h2:mem:portal;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1"
+      - key: PORTAL_DB_USER
+        value: "sa"
+      - key: PORTAL_DB_PASSWORD
+        value: ""

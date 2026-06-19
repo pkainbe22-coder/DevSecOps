@@ -19,10 +19,13 @@ public final class Db {
 
     public static Connection getConnection() throws SQLException {
         String url = url();
-        // MySQL driver is registered on demand; H2 auto-registers when present (tests).
-        if (url.startsWith("jdbc:mysql")) {
-            try { Class.forName("com.mysql.cj.jdbc.Driver"); }
-            catch (ClassNotFoundException e) { throw new SQLException("MySQL JDBC driver missing", e); }
+        // Explicitly load the driver: in a webapp, classloader isolation prevents
+        // DriverManager's ServiceLoader auto-registration from finding WEB-INF/lib drivers.
+        String driver = url.startsWith("jdbc:mysql") ? "com.mysql.cj.jdbc.Driver"
+                      : url.startsWith("jdbc:h2")    ? "org.h2.Driver" : null;
+        if (driver != null) {
+            try { Class.forName(driver); }
+            catch (ClassNotFoundException e) { throw new SQLException("JDBC driver missing: " + driver, e); }
         }
         return DriverManager.getConnection(url,
                 Env.get("PORTAL_DB_USER", "portal"),
