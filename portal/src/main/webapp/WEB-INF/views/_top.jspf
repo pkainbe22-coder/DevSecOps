@@ -2,13 +2,17 @@
      Reads sessionScope.role / username. --%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<%-- Pipeline tool links: real URLs from env when self-hosted; inert badges in the hosted demo
-     (no Jenkins/Sonar/Gitea infra → a localhost link would just open a dead tab). --%>
+<%-- Pipeline tool links open in a new tab. Self-hosted → the running tool (env base URL).
+     Hosted demo (no local infra) → the tool's official site, so the click is never a dead tab. --%>
 <%
-  request.setAttribute("demoMode", "true".equalsIgnoreCase(String.valueOf(System.getenv("DEMO_MODE"))));
-  request.setAttribute("jenkinsUrl", System.getenv().getOrDefault("JENKINS_BASE_URL", "http://localhost:8080"));
-  request.setAttribute("sonarUrl",   System.getenv().getOrDefault("SONAR_BASE_URL",   "http://localhost:9000"));
-  request.setAttribute("giteaUrl",   System.getenv().getOrDefault("GITEA_BASE_URL",   "http://localhost:3001"));
+  boolean demo = "true".equalsIgnoreCase(String.valueOf(System.getenv("DEMO_MODE")));
+  request.setAttribute("demoMode", demo);
+  request.setAttribute("jenkinsUrl", demo ? "https://www.jenkins.io/"
+      : System.getenv().getOrDefault("JENKINS_BASE_URL", "http://localhost:8080"));
+  request.setAttribute("sonarUrl", demo ? "https://www.sonarsource.com/products/sonarqube/"
+      : System.getenv().getOrDefault("SONAR_BASE_URL", "http://localhost:9000"));
+  request.setAttribute("giteaUrl", demo ? "https://about.gitea.com/"
+      : System.getenv().getOrDefault("GITEA_BASE_URL", "http://localhost:3001"));
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,18 +50,9 @@
 
     <div class="nav-label">Pipeline</div>
     <nav class="nav">
-      <c:choose>
-        <c:when test="${demoMode}">
-          <span class="tool-off" title="Jenkins runs in the full self-hosted stack — not deployed in this live demo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg> Jenkins <em class="tag">demo</em></span>
-          <span class="tool-off" title="SonarQube runs in the full self-hosted stack — not deployed in this live demo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4m8-12-4 16"/></svg> SonarQube <em class="tag">demo</em></span>
-          <span class="tool-off" title="Gitea runs in the full self-hosted stack — not deployed in this live demo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M1.05 12H7m10 0h5.95"/></svg> Gitea <em class="tag">demo</em></span>
-        </c:when>
-        <c:otherwise>
-          <a href="${jenkinsUrl}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg> Jenkins</a>
-          <a href="${sonarUrl}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4m8-12-4 16"/></svg> SonarQube</a>
-          <a href="${giteaUrl}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M1.05 12H7m10 0h5.95"/></svg> Gitea</a>
-        </c:otherwise>
-      </c:choose>
+      <a href="${jenkinsUrl}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg> Jenkins</a>
+      <a href="${sonarUrl}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4m8-12-4 16"/></svg> SonarQube</a>
+      <a href="${giteaUrl}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M1.05 12H7m10 0h5.95"/></svg> Gitea</a>
     </nav>
 
     <div class="spacer"></div>

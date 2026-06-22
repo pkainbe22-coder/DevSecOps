@@ -52,12 +52,6 @@ code,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monosp
 .nav a.active{background:linear-gradient(90deg,rgba(99,102,241,.20),rgba(99,102,241,.04));
   color:#fff;border-color:rgba(99,102,241,.35)}
 .nav a.active svg{color:var(--brand2);opacity:1}
-.nav span.tool-off{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:10px;
-  color:var(--faint);font-weight:600;font-size:13.5px;border:1px solid transparent;cursor:default;opacity:.7}
-.nav span.tool-off svg{width:18px;height:18px;opacity:.5}
-.nav span.tool-off .tag{margin-left:auto;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--muted);background:var(--surface);border:1px solid var(--line2);
-  border-radius:6px;padding:2px 6px}
 .sidebar .spacer{flex:1}
 .userbox{
   display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);
