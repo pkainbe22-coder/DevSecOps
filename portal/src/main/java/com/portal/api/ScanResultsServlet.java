@@ -7,6 +7,8 @@ import com.portal.dao.CommitDao;
 import com.portal.dao.ScanResultDao;
 import com.portal.model.Commit;
 import com.portal.model.Severity;
+import com.portal.policy.PolicyDecision;
+import com.portal.policy.PolicyEngine;
 import com.portal.util.Env;
 
 import jakarta.servlet.annotation.WebServlet;
@@ -33,6 +35,7 @@ public class ScanResultsServlet extends HttpServlet {
     private final CommitDao commitDao = new CommitDao();
     private final ScanResultDao scanDao = new ScanResultDao();
     private final ApprovalDao approvalDao = new ApprovalDao();
+    private final PolicyEngine policy = new PolicyEngine();
     private final SonarClient sonar = new SonarClient();
     private final GiteaClient gitea = new GiteaClient();
 
@@ -90,12 +93,19 @@ public class ScanResultsServlet extends HttpServlet {
                 }
             }
 
-            // 4. gate: PENDING approval
-            approvalDao.ensurePending(commitId);
+            // 4. Policy-as-Code gate: evaluate the commit's aggregate severities against
+            //    the active ruleset and record the resulting decision (auto-approve /
+            //    auto-reject / escalate / manual). Idempotent — never overturns an
+            //    existing decision on re-push.
+            Severity totals = scanDao.totalsForCommit(commitId);
+            PolicyDecision decision = policy.evaluate(totals);
+            approvalDao.ensureDecision(commitId, decision);
 
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setContentType("application/json");
-            resp.getWriter().write("{\"status\":\"ok\",\"commitId\":" + commitId + "}");
+            resp.getWriter().write("{\"status\":\"ok\",\"commitId\":" + commitId
+                    + ",\"decision\":\"" + decision.decision + "\""
+                    + ",\"source\":\"" + decision.source + "\"}");
         } catch (Exception e) {
             System.err.println("[ScanResultsServlet] " + e.getMessage());
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "processing failed");

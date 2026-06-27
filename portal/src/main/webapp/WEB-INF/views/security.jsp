@@ -45,7 +45,7 @@
   <table>
     <thead><tr>
       <th>Commit</th><th>Author</th><th>Repo</th><th>Severity</th>
-      <th>Crit</th><th>High</th><th>Med</th><th>Low</th><th>Status</th><th>Decision</th>
+      <th>Crit</th><th>High</th><th>Med</th><th>Low</th><th>Status</th><th>Policy</th><th>Decision</th>
     </tr></thead>
     <tbody>
       <c:forEach var="c" items="${commits}">
@@ -70,6 +70,17 @@
           <td><span class="sev ${c.medium>0?'m':'zero'}">${c.medium}</span></td>
           <td><span class="sev ${c.low>0?'l':'zero'}">${c.low}</span></td>
           <td><span class="badge ${empty c.decision ? 'PENDING' : c.decision}">${empty c.decision ? 'PENDING' : c.decision}</span></td>
+          <td>
+            <c:set var="src" value="${empty c.decisionSource ? 'MANUAL' : c.decisionSource}"/>
+            <c:choose>
+              <c:when test="${src eq 'AUTO_APPROVED'}">
+                <span class="pbadge auto-approved" title="${fn:escapeXml(c.policyTooltip())}">Auto-approved</span></c:when>
+              <c:when test="${src eq 'AUTO_REJECTED'}">
+                <span class="pbadge auto-rejected" title="${fn:escapeXml(c.policyTooltip())}">Auto-rejected</span></c:when>
+              <c:otherwise>
+                <span class="pbadge manual" title="${fn:escapeXml(c.policyTooltip())}">Manual review</span></c:otherwise>
+            </c:choose>
+          </td>
           <td>
             <c:choose>
               <c:when test="${c.decision eq 'APPROVED' or c.decision eq 'REJECTED'}">

@@ -16,7 +16,9 @@ public class Commit {
     // Joined/derived fields used by the dashboards:
     public int critical, high, medium, low;     // summed across scan_results
     public String decision;                      // PENDING | APPROVED | REJECTED
+    public String decisionSource;                // AUTO_APPROVED | AUTO_REJECTED | MANUAL
     public String approvalComment;
+    public LocalDateTime approvalDecidedAt;
     public String deployStatus;                  // NOT_DEPLOYED | DEPLOYED | ...
 
     public String shortHash() {
@@ -30,6 +32,15 @@ public class Commit {
     }
 
     public int totalFindings() { return critical + high + medium + low; }
+
+    /** Tooltip for the dashboard policy badge: the reason + when it was decided. */
+    public String policyTooltip() {
+        String reason = (approvalComment == null || approvalComment.isBlank())
+                ? "Awaiting manual review" : approvalComment;
+        if (approvalDecidedAt == null) return reason;
+        return reason + " · " + approvalDecidedAt.format(
+                java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+    }
 
     // Getters — JSTL EL (${c.author}) needs JavaBean accessors, not public fields.
     public int getId() { return id; }
@@ -45,6 +56,8 @@ public class Commit {
     public int getMedium() { return medium; }
     public int getLow() { return low; }
     public String getDecision() { return decision; }
+    public String getDecisionSource() { return decisionSource; }
     public String getApprovalComment() { return approvalComment; }
+    public LocalDateTime getApprovalDecidedAt() { return approvalDecidedAt; }
     public String getDeployStatus() { return deployStatus; }
 }

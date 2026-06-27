@@ -1,6 +1,7 @@
 package com.portal;
 
 import com.portal.util.Db;
+import com.portal.util.PolicySchema;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -58,6 +59,7 @@ public final class TestDb {
                   commit_id INT, status VARCHAR(15) DEFAULT 'NOT_DEPLOYED',
                   environment VARCHAR(50), ops_user_id INT, deployed_at DATETIME
                 )""");
+            PolicySchema.apply(c);   // decision_source column + policy_rules + default ruleset
         } catch (SQLException e) {
             throw new RuntimeException("test schema setup failed", e);
         }

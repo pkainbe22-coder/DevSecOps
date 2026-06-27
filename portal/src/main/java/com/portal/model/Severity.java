@@ -9,4 +9,15 @@ public class Severity {
         this.critical = critical; this.high = high; this.medium = medium; this.low = low;
     }
     public int total() { return critical + high + medium + low; }
+
+    /** Look up a count by policy condition_field name (critical/high/medium/low). */
+    public int get(String field) {
+        return switch (field == null ? "" : field.toLowerCase()) {
+            case "critical" -> critical;
+            case "high"     -> high;
+            case "medium"   -> medium;
+            case "low"      -> low;
+            default         -> 0;
+        };
+    }
 }

@@ -117,13 +117,14 @@ public class CommitDao {
         else if ("APPROVED".equals(decision)) having = "HAVING a.decision = 'APPROVED'\n";
         else if ("REJECTED".equals(decision)) having = "HAVING a.decision = 'REJECTED'\n";
         String sql = """
-            SELECT c.*, a.decision, a.comment AS approval_comment,
+            SELECT c.*, a.decision, a.decision_source, a.comment AS approval_comment,
+                   a.decided_at AS approval_decided_at,
                    COALESCE(SUM(s.critical),0) crit, COALESCE(SUM(s.high),0) hi,
                    COALESCE(SUM(s.medium),0) med, COALESCE(SUM(s.low),0) lo
             FROM commits c
             LEFT JOIN deployment_approvals a ON a.commit_id = c.id
             LEFT JOIN scan_results s ON s.commit_id = c.id
-            GROUP BY c.id, a.decision, a.comment
+            GROUP BY c.id, a.decision, a.decision_source, a.comment, a.decided_at
             """ + having + """
             ORDER BY c.committed_at DESC, c.id DESC
             LIMIT ? OFFSET ?
@@ -160,7 +161,9 @@ public class CommitDao {
                     c.medium = rs.getInt("med");
                     c.low = rs.getInt("lo");
                     c.decision = rs.getString("decision");
+                    c.decisionSource = optional(rs, "decision_source");
                     c.approvalComment = optional(rs, "approval_comment");
+                    c.approvalDecidedAt = optionalTimestamp(rs, "approval_decided_at");
                     c.deployStatus = optional(rs, "deploy_status");
                     out.add(c);
                 }
@@ -195,5 +198,12 @@ public class CommitDao {
 
     private String optional(ResultSet rs, String col) {
         try { return rs.getString(col); } catch (SQLException e) { return null; }
+    }
+
+    private java.time.LocalDateTime optionalTimestamp(ResultSet rs, String col) {
+        try {
+            Timestamp ts = rs.getTimestamp(col);
+            return ts == null ? null : ts.toLocalDateTime();
+        } catch (SQLException e) { return null; }
     }
 }

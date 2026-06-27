@@ -5,6 +5,7 @@ import com.portal.util.Db;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -37,6 +38,25 @@ public class ScanResultDao {
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("scan_results upsert failed", e);
+        }
+    }
+
+    /** Aggregate severity across all scan types (SAST+SCA+DAST) for one commit. */
+    public Severity totalsForCommit(int commitId) {
+        String sql = """
+            SELECT COALESCE(SUM(critical),0) c, COALESCE(SUM(high),0) h,
+                   COALESCE(SUM(medium),0) m, COALESCE(SUM(low),0) l
+            FROM scan_results WHERE commit_id = ?
+            """;
+        try (Connection conn = Db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, commitId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return new Severity();
+                return new Severity(rs.getInt("c"), rs.getInt("h"), rs.getInt("m"), rs.getInt("l"));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("totalsForCommit failed", e);
         }
     }
 }

@@ -3,6 +3,7 @@ package com.portal.auth;
 import com.portal.util.Db;
 import com.portal.util.Env;
 import com.portal.util.Passwords;
+import com.portal.util.PolicySchema;
 
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
@@ -30,6 +31,7 @@ public class DemoBootstrap implements ServletContextListener {
         if (!"true".equalsIgnoreCase(Env.get("DEMO_MODE", "false"))) return;
         try (Connection c = Db.getConnection(); Statement st = c.createStatement()) {
             createSchema(st);
+            PolicySchema.apply(c);          // decision_source column + policy_rules + default ruleset
             seedUsers(st);
             if (isEmpty(st)) seedDemoData(st);
             System.out.println("[demo] bootstrap complete");
@@ -94,18 +96,21 @@ public class DemoBootstrap implements ServletContextListener {
         scan(st, 3, "SAST", "SonarQube", 0, 0, 0, 1);
         scan(st, 3, "DAST", "ZAP", 0, 0, 4, 13);
         scan(st, 4, "SAST", "SonarQube", 0, 0, 0, 0);
-        scan(st, 5, "SAST", "SonarQube", 0, 0, 2, 1);
+        scan(st, 5, "SAST", "SonarQube", 0, 1, 2, 1);        // one high → manual review queue
         scan(st, 5, "DAST", "ZAP", 0, 0, 1, 9);
         scan(st, 6, "SCA", "DependencyCheck", 3, 4, 2, 0);   // Log4Shell-style critical
         scan(st, 6, "SAST", "SonarQube", 0, 1, 1, 0);
 
-        // approvals : (commit, decision, secUser, comment)
-        approve(st, 1, "APPROVED", 3, "Only a minor finding - acceptable.");
-        approve(st, 2, "PENDING", null, null);
-        approve(st, 3, "APPROVED", 3, "Reviewed DAST warnings - non-blocking headers.");
-        approve(st, 4, "APPROVED", 3, "Clean scan.");
-        approve(st, 5, "PENDING", null, null);
-        approve(st, 6, "REJECTED", 3, "Critical CVE (Log4Shell) in dependency - blocked.");
+        // approvals : (commit, decision, decision_source, secUser, comment)
+        // The Policy-as-Code gate auto-resolves the clear-cut cases and routes the rest
+        // (commits with high findings) to the manual review queue.
+        approve(st, 1, "APPROVED", "AUTO_APPROVED", null, "Auto-approved: no critical or high severity findings");
+        approve(st, 2, "PENDING",  "MANUAL", null, null);
+        approve(st, 3, "APPROVED", "AUTO_APPROVED", null, "Auto-approved: no critical or high severity findings");
+        approve(st, 4, "APPROVED", "AUTO_APPROVED", null, "Auto-approved: no critical or high severity findings");
+        approve(st, 5, "PENDING",  "MANUAL", null, null);
+        approve(st, 6, "REJECTED", "AUTO_REJECTED", null,
+                "Auto-rejected: 3 critical severity finding(s) require remediation before deployment");
 
         // deployments : (commit, status, env, opsUser)
         deploy(st, 1, "DEPLOYED", "production", 4);
@@ -122,11 +127,11 @@ public class DemoBootstrap implements ServletContextListener {
         st.execute("INSERT INTO scan_results (commit_id, scan_type, tool, critical, high, medium, low, scanned_at) VALUES ("
                  + cid + ",'" + type + "','" + tool + "'," + cr + "," + hi + "," + me + "," + lo + ", CURRENT_TIMESTAMP)");
     }
-    private void approve(Statement st, int cid, String dec, Integer u, String comment) throws SQLException {
-        st.execute("INSERT INTO deployment_approvals (commit_id, decision, security_user_id, comment, decided_at) VALUES ("
-                 + cid + ",'" + dec + "'," + (u == null ? "NULL" : u) + ","
+    private void approve(Statement st, int cid, String dec, String source, Integer u, String comment) throws SQLException {
+        st.execute("INSERT INTO deployment_approvals (commit_id, decision, decision_source, security_user_id, comment, decided_at) VALUES ("
+                 + cid + ",'" + dec + "','" + source + "'," + (u == null ? "NULL" : u) + ","
                  + (comment == null ? "NULL" : "'" + esc(comment) + "'") + ","
-                 + (u == null ? "NULL" : "CURRENT_TIMESTAMP") + ")");
+                 + ("PENDING".equals(dec) ? "NULL" : "CURRENT_TIMESTAMP") + ")");
     }
     private void deploy(Statement st, int cid, String status, String env, int u) throws SQLException {
         st.execute("INSERT INTO deployments (commit_id, status, environment, ops_user_id, deployed_at) VALUES ("

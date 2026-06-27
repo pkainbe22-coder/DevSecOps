@@ -40,12 +40,36 @@ CREATE TABLE IF NOT EXISTS deployment_approvals (
   id INT AUTO_INCREMENT PRIMARY KEY,
   commit_id INT UNIQUE,
   decision ENUM('PENDING','APPROVED','REJECTED') DEFAULT 'PENDING',
+  decision_source ENUM('AUTO_APPROVED','AUTO_REJECTED','MANUAL') DEFAULT 'MANUAL',  -- Policy-as-Code gate
   security_user_id INT,
   comment TEXT,
   decided_at DATETIME,
   FOREIGN KEY (commit_id) REFERENCES commits(id),
   FOREIGN KEY (security_user_id) REFERENCES users(id)
 );
+
+-- Policy-as-Code: editable rules that drive the automatic gate (lowest priority first,
+-- first match wins). Seeded with the default governance policy below.
+CREATE TABLE IF NOT EXISTS policy_rules (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  rule_name VARCHAR(100),
+  condition_field ENUM('critical','high','medium','low') NOT NULL,
+  operator ENUM('eq','gt','lt','gte','lte') NOT NULL,
+  threshold_value INT NOT NULL,
+  action ENUM('AUTO_APPROVE','AUTO_REJECT','ESCALATE','MANUAL_REVIEW') NOT NULL,
+  priority INT NOT NULL,
+  active BOOLEAN DEFAULT TRUE
+);
+
+-- Default ruleset (only seeded when the table is empty).
+INSERT INTO policy_rules (rule_name, condition_field, operator, threshold_value, action, priority, active)
+SELECT * FROM (
+  SELECT 'Block critical vulnerabilities'  AS r, 'critical' AS f, 'gt'  AS o, 0 AS t, 'AUTO_REJECT'   AS a, 10 AS p, TRUE AS ac UNION ALL
+  SELECT 'Escalate excessive high findings','high',    'gt',  3, 'ESCALATE',      20, TRUE UNION ALL
+  SELECT 'Review high severity findings',   'high',    'gt',  0, 'MANUAL_REVIEW', 30, TRUE UNION ALL
+  SELECT 'Auto-approve clean builds',       'critical','lte', 0, 'AUTO_APPROVE',  40, TRUE
+) seed
+WHERE NOT EXISTS (SELECT 1 FROM policy_rules);
 
 CREATE TABLE IF NOT EXISTS deployments (
   id INT AUTO_INCREMENT PRIMARY KEY,

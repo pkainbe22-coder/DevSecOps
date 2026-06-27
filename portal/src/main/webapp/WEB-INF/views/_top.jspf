@@ -39,8 +39,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> My Commits</a>
       </c:if>
       <c:if test="${sessionScope.role eq 'SECURITY'}">
-        <a class="active" href="${pageContext.request.contextPath}/security/dashboard">
+        <a class="${pageTitle eq 'Policy as Code' ? '' : 'active'}" href="${pageContext.request.contextPath}/security/dashboard">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Approval Queue</a>
+        <a class="${pageTitle eq 'Policy as Code' ? 'active' : ''}" href="${pageContext.request.contextPath}/security/policy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 7.8 8 9 4.6-1.2 8-4 8-9V5l-8-3z"/><path d="m9 12 2 2 4-4"/></svg> Policy as Code</a>
       </c:if>
       <c:if test="${sessionScope.role eq 'OPERATIONS'}">
         <a class="active" href="${pageContext.request.contextPath}/ops/dashboard">
