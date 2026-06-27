@@ -19,7 +19,9 @@ pipeline {
           // First run downloads the NVD database into the persistent depcheck-data volume.
           sh '''
             docker volume create depcheck-data >/dev/null 2>&1 || true
-            docker run --rm --volumes-from portal-jenkins \
+            # -u root: the Jenkins workspace is root-owned, but the depcheck image runs as
+            # uid 1000 and otherwise can't write dependency-check-report.json into it.
+            docker run --rm -u root --volumes-from portal-jenkins \
               -v depcheck-data:/usr/share/dependency-check/data \
               owasp/dependency-check:latest \
               --scan /var/jenkins_home/workspace/my-app/target \
