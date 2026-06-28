@@ -81,6 +81,8 @@ public class ScanResultsServlet extends HttpServlet {
             if (projectKey != null && !projectKey.isBlank()) {
                 Severity sast = sonar.vulnerabilityCounts(projectKey);
                 scanDao.upsert(commitId, "SAST", "SonarQube", sast, sonar.reportUrl(projectKey));
+                // Individual SAST findings for the Risk Intelligence table.
+                findingDao.replaceForScan(commitId, "SAST", sonar.findings(projectKey));
             }
             // SCA + DAST: Jenkins may embed the raw report JSON under "reports".
             // Parsed here (in Java, testable) and stored as their own scan_results rows.
