@@ -37,7 +37,7 @@
 <div class="card ai-card">
   <div class="card-head">
     <div>
-      <h2>AI Security Analyst <span class="ai-dot ${aiConfigured ? 'on':'off'}">${aiConfigured ? fn:escapeXml(aiProvider).concat(' connected') : 'not configured'}</span></h2>
+      <h2>AI Security Analyst <span class="ai-dot ${aiConfigured ? 'on':'off'}">${aiConfigured ? fn:escapeXml(aiProvider).concat(' connected') : (demoMode ? 'demo · sample analysis' : 'not configured')}</span></h2>
       <p>Claude explains each finding in plain English and proposes a concrete fix. Generate an executive posture summary, or use <em>Explain&nbsp;&amp;&nbsp;Fix</em> on any finding below.</p>
     </div>
     <div class="grow"></div>
@@ -56,8 +56,11 @@
   <c:if test="${not empty aiExecSummary}">
     <div class="ai-summary"><div class="ai-tag">Executive summary</div>${fn:escapeXml(aiExecSummary)}</div>
   </c:if>
-  <c:if test="${not aiConfigured}">
-    <div class="ai-hint">Add a Claude API key to enable AI explanations &amp; auto-generated fixes. The threat-intel ranking below works without it.</div>
+  <c:if test="${not aiConfigured and demoMode}">
+    <div class="ai-hint">This hosted demo shows <strong>pre-generated</strong> AI analysis — expand the Log4Shell row below to see it. The threat-intel ranking is fully live; connect a key to generate analysis on demand.</div>
+  </c:if>
+  <c:if test="${not aiConfigured and not demoMode}">
+    <div class="ai-hint">Add a Claude or Groq API key to enable AI explanations &amp; auto-generated fixes. The threat-intel ranking below works without it.</div>
   </c:if>
 </div>
 

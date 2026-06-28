@@ -116,7 +116,78 @@ public class DemoBootstrap implements ServletContextListener {
         deploy(st, 1, "DEPLOYED", "production", 4);
         deploy(st, 4, "DEPLOYED", "production", 4);
         // commit 3 approved but not yet deployed (sits in ops queue)
+
+        seedFindings(st);
     }
+
+    /**
+     * Individual findings for the Risk Intelligence dashboard — each CVE enriched with
+     * EPSS exploit-probability, CISA KEV membership, and a contextual risk score. The
+     * Log4Shell CVEs carry pre-generated AI analysis so the demo shows it without a key.
+     */
+    private void seedFindings(Statement st) throws SQLException {
+        String l4sSummary = "Apache Log4j2 allows unauthenticated remote code execution via JNDI lookups "
+            + "embedded in logged strings (Log4Shell). Because logging is everywhere and the exploit is "
+            + "trivial to trigger, this is one of the most exploited vulnerabilities ever recorded - it is on "
+            + "CISA's Known Exploited Vulnerabilities list with a near-certain exploit probability.";
+        String l4sFix = "Upgrade log4j-core to 2.17.1 or later. As an immediate mitigation, set the system "
+            + "property log4j2.formatMsgNoLookups=true, or remove the JndiLookup class from the classpath.";
+
+        // commit 6 — SCA: the log4j CVE cluster (the headline)
+        finding(st, 6, "SCA", "CVE-2021-44228", "log4j-core-2.14.1.jar",
+                "Remote code execution via JNDI lookup substitution (Log4Shell)",
+                "CRITICAL", 10.0, 0.97, true, 100, l4sSummary, l4sFix);
+        finding(st, 6, "SCA", "CVE-2021-45046", "log4j-core-2.14.1.jar",
+                "RCE / denial of service via Thread Context Map lookups",
+                "CRITICAL", 9.0, 0.94, true, 90,
+                "A follow-up to Log4Shell: incomplete fixes in 2.15.0 still allow RCE and DoS via crafted Thread "
+                + "Context Map input. Also actively exploited and on the CISA KEV list.",
+                "Upgrade log4j-core to 2.17.1 or later - earlier patches were insufficient.");
+        finding(st, 6, "SCA", "CVE-2021-44832", "log4j-core-2.14.1.jar",
+                "RCE via JDBC Appender with attacker-controlled configuration",
+                "MEDIUM", 6.6, 0.31, false, 53, null, null);
+        finding(st, 6, "SCA", "CVE-2021-45105", "log4j-core-2.14.1.jar",
+                "Infinite recursion denial of service in lookup evaluation",
+                "MEDIUM", 5.9, 0.18, false, 47, null, null);
+        finding(st, 6, "SAST", "java:S2076", "CommandRunner.java",
+                "OS command built from user-controlled input (command injection)",
+                "HIGH", 0, null, false, 70, null, null);
+
+        // commit 2 — SCA + SAST: a mix of severities
+        finding(st, 2, "SCA", "CVE-2022-42003", "jackson-databind-2.9.0.jar",
+                "Deeply nested wrapper array deserialization causes stack overflow (DoS)",
+                "HIGH", 7.5, 0.02, false, 41, null, null);
+        finding(st, 2, "SCA", "CVE-2020-8908", "guava-30.0-jre.jar",
+                "Temp directory created with insecure permissions (information disclosure)",
+                "LOW", 3.3, 0.004, false, 16, null, null);
+        finding(st, 2, "SAST", "java:S5852", "InputValidator.java",
+                "Regular expression vulnerable to catastrophic backtracking (ReDoS)",
+                "HIGH", 0, null, false, 70, null, null);
+
+        // DAST (ZAP) alerts — no CVE/CVSS; risk derived from severity
+        finding(st, 1, "DAST", "ZAP-10202", "http://staging:8080",
+                "Absence of Anti-CSRF Tokens", "MEDIUM", 0, null, false, 40, null, null);
+        finding(st, 1, "DAST", "ZAP-10021", "http://staging:8080",
+                "X-Content-Type-Options header missing", "LOW", 0, null, false, 15, null, null);
+        finding(st, 3, "DAST", "ZAP-10038", "http://staging:8080",
+                "Content Security Policy (CSP) header not set", "MEDIUM", 0, null, false, 40, null, null);
+        finding(st, 3, "DAST", "ZAP-10011", "http://staging:8080",
+                "Cookie set without Secure flag", "LOW", 0, null, false, 15, null, null);
+        finding(st, 5, "DAST", "ZAP-10098", "http://staging:8080",
+                "Cross-Domain Misconfiguration (permissive CORS)", "MEDIUM", 0, null, false, 40, null, null);
+    }
+
+    private void finding(Statement st, int cid, String type, String cve, String pkg, String title,
+                         String sev, double cvss, Double epss, boolean kev, double risk,
+                         String aiSummary, String aiFix) throws SQLException {
+        st.execute("INSERT INTO findings (commit_id, scan_type, cve_id, package, title, severity, cvss, "
+                 + "epss, epss_percentile, kev, risk_score, ai_summary, ai_fix, created_at) VALUES ("
+                 + cid + ",'" + type + "'," + sval(cve) + ",'" + esc(pkg) + "','" + esc(title) + "','" + sev + "',"
+                 + cvss + "," + dval(epss) + "," + dval(epss) + "," + (kev ? "TRUE" : "FALSE") + "," + risk + ","
+                 + sval(aiSummary) + "," + sval(aiFix) + ", CURRENT_TIMESTAMP)");
+    }
+    private String sval(String s) { return s == null ? "NULL" : "'" + esc(s) + "'"; }
+    private String dval(Double d) { return d == null ? "NULL" : String.valueOf(d); }
 
     private void commit(Statement st, String hash, String author, String msg, String branch,
                         String when, String url) throws SQLException {
