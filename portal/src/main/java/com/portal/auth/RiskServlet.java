@@ -1,6 +1,6 @@
 package com.portal.auth;
 
-import com.portal.api.AnthropicClient;
+import com.portal.api.AiAnalyst;
 import com.portal.dao.FindingDao;
 import com.portal.model.Finding;
 
@@ -22,7 +22,7 @@ import java.util.List;
 public class RiskServlet extends HttpServlet {
 
     private final FindingDao findingDao = new FindingDao();
-    private final AnthropicClient claude = new AnthropicClient();
+    private final AiAnalyst claude = new AiAnalyst();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -46,6 +46,7 @@ public class RiskServlet extends HttpServlet {
 
         // AI Security Analyst state
         req.setAttribute("aiConfigured", claude.isConfigured());
+        req.setAttribute("aiProvider", claude.providerName());
         req.setAttribute("aiStatus", req.getParameter("ai"));   // ok | error | unconfigured | null
         var session = req.getSession(false);
         if (session != null) req.setAttribute("aiExecSummary", session.getAttribute("aiExecSummary"));

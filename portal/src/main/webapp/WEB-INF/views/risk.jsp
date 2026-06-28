@@ -24,7 +24,7 @@
 <div class="card ai-card">
   <div class="card-head">
     <div>
-      <h2>AI Security Analyst <span class="ai-dot ${aiConfigured ? 'on':'off'}">${aiConfigured ? 'Claude connected' : 'not configured'}</span></h2>
+      <h2>AI Security Analyst <span class="ai-dot ${aiConfigured ? 'on':'off'}">${aiConfigured ? fn:escapeXml(aiProvider).concat(' connected') : 'not configured'}</span></h2>
       <p>Claude explains each finding in plain English and proposes a concrete fix. Generate an executive posture summary, or use <em>Explain&nbsp;&amp;&nbsp;Fix</em> on any finding below.</p>
     </div>
     <div class="grow"></div>

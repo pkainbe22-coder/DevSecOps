@@ -1,6 +1,7 @@
 package com.portal.auth;
 
-import com.portal.api.AnthropicClient;
+import com.portal.api.AiAnalyst;
+import com.portal.api.AiResult;
 import com.portal.dao.FindingDao;
 import com.portal.model.Finding;
 
@@ -26,7 +27,7 @@ import java.util.List;
 public class AiServlet extends HttpServlet {
 
     private final FindingDao findingDao = new FindingDao();
-    private final AnthropicClient claude = new AnthropicClient();
+    private final AiAnalyst claude = new AiAnalyst();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -51,7 +52,7 @@ public class AiServlet extends HttpServlet {
             return;
         }
         try {
-            AnthropicClient.AiResult r = claude.analyzeFinding(f);
+            AiResult r = claude.analyzeFinding(f);
             findingDao.saveAi(findingId, r.summary, r.fix);
             redirectWith(req, resp, "ai=ok#f" + findingId);
         } catch (Exception e) {
