@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.portal.dao.ApprovalDao;
 import com.portal.dao.CommitDao;
+import com.portal.dao.FindingDao;
 import com.portal.dao.ScanResultDao;
 import com.portal.model.Commit;
 import com.portal.model.Severity;
@@ -35,6 +36,8 @@ public class ScanResultsServlet extends HttpServlet {
     private final CommitDao commitDao = new CommitDao();
     private final ScanResultDao scanDao = new ScanResultDao();
     private final ApprovalDao approvalDao = new ApprovalDao();
+    private final FindingDao findingDao = new FindingDao();
+    private final ThreatIntel threatIntel = new ThreatIntel();
     private final PolicyEngine policy = new PolicyEngine();
     private final SonarClient sonar = new SonarClient();
     private final GiteaClient gitea = new GiteaClient();
@@ -84,14 +87,25 @@ public class ScanResultsServlet extends HttpServlet {
             if (body.has("reports") && body.get("reports").isJsonObject()) {
                 JsonObject reports = body.getAsJsonObject("reports");
                 if (reports.has("sca") && reports.get("sca").isJsonObject()) {
-                    Severity sca = DependencyCheckParser.parse(reports.getAsJsonObject("sca"));
+                    JsonObject scaReport = reports.getAsJsonObject("sca");
+                    Severity sca = DependencyCheckParser.parse(scaReport);
                     scanDao.upsert(commitId, "SCA", "DependencyCheck", sca, null);
+                    // Risk Intelligence: store individual CVEs too.
+                    findingDao.replaceForScan(commitId, "SCA",
+                            FindingExtractor.fromDependencyCheck(scaReport));
                 }
                 if (reports.has("dast") && reports.get("dast").isJsonObject()) {
-                    Severity dast = ZapParser.parse(reports.getAsJsonObject("dast"));
+                    JsonObject dastReport = reports.getAsJsonObject("dast");
+                    Severity dast = ZapParser.parse(dastReport);
                     scanDao.upsert(commitId, "DAST", "ZAP", dast, null);
+                    findingDao.replaceForScan(commitId, "DAST",
+                            FindingExtractor.fromZap(dastReport));
                 }
             }
+
+            // Threat-intel enrichment: EPSS exploit-probability + CISA KEV membership for
+            // this commit's CVEs, then recompute each finding's contextual risk score.
+            threatIntel.enrichCommit(commitId);
 
             // 4. Policy-as-Code gate: evaluate the commit's aggregate severities against
             //    the active ruleset and record the resulting decision (auto-approve /

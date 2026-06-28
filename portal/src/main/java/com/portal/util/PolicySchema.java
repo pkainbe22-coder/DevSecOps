@@ -37,6 +37,27 @@ public final class PolicySchema {
                          + "ADD COLUMN decision_source VARCHAR(20) DEFAULT 'MANUAL'");
             }
 
+            // Risk Intelligence: individual findings (one row per CVE/alert) enriched with
+            // EPSS exploit-probability, CISA KEV membership, a computed risk score, and AI text.
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS findings (
+                  id INT AUTO_INCREMENT PRIMARY KEY,
+                  commit_id INT,
+                  scan_type VARCHAR(10),
+                  cve_id VARCHAR(50),
+                  package VARCHAR(255),
+                  title VARCHAR(500),
+                  severity VARCHAR(12),
+                  cvss DOUBLE DEFAULT 0,
+                  epss DOUBLE,
+                  epss_percentile DOUBLE,
+                  kev BOOLEAN DEFAULT FALSE,
+                  risk_score DOUBLE DEFAULT 0,
+                  ai_summary TEXT,
+                  ai_fix TEXT,
+                  created_at DATETIME
+                )""");
+
             try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM policy_rules")) {
                 rs.next();
                 if (rs.getInt(1) == 0) seedDefaults(st);

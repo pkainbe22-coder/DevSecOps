@@ -85,6 +85,8 @@ services:
       SONAR_BASE_URL: http://sonarqube:9000
       SONAR_API_TOKEN: ${SONAR_API_TOKEN}
       PORTAL_API_TOKEN: ${PORTAL_API_TOKEN}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-4-8}
     ports:
       - "8081:8080"
 
