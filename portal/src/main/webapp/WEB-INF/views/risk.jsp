@@ -20,6 +20,19 @@
     <div class="val">${exploitable}</div><div class="lab">High exploit probability (EPSS ≥ 50%)</div></div>
 </div>
 
+<%-- Security analytics --%>
+<div class="card">
+  <div class="card-head"><div>
+    <h2>Security Analytics</h2>
+    <p>Severity mix, scanner coverage, and how critical + high findings trend across recent commits.</p>
+  </div></div>
+  <div class="charts">
+    <div class="chartbox"><h3>Findings by severity</h3><canvas id="sevChart" height="200"></canvas></div>
+    <div class="chartbox"><h3>Findings by scanner</h3><canvas id="scanChart" height="200"></canvas></div>
+    <div class="chartbox wide"><h3>Critical + High over recent commits</h3><canvas id="trendChart" height="200"></canvas></div>
+  </div>
+</div>
+
 <%-- AI Security Analyst panel --%>
 <div class="card ai-card">
   <div class="card-head">
@@ -126,5 +139,42 @@
       <h3>No findings yet</h3>Individual CVEs appear here after the next pipeline scan, enriched with EPSS + KEV.</div>
   </c:if>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const SEV  = [${sevCounts[0]}, ${sevCounts[1]}, ${sevCounts[2]}, ${sevCounts[3]}];
+  const SCAN = [${scanCounts[0]}, ${scanCounts[1]}, ${scanCounts[2]}];
+  // trend comes newest-first; reverse for chronological left→right
+  const T_LABELS = [<c:forEach var="t" items="${trend}" varStatus="s">'${t.shortHash()}'<c:if test="${!s.last}">,</c:if></c:forEach>].reverse();
+  const T_CH     = [<c:forEach var="t" items="${trend}" varStatus="s">${t.critical + t.high}<c:if test="${!s.last}">,</c:if></c:forEach>].reverse();
+
+  const GRID = 'rgba(148,163,184,.12)', TICK = '#8a98b5';
+  Chart.defaults.color = TICK;
+  Chart.defaults.font.family = "'Inter',sans-serif";
+
+  new Chart(sevChart, {
+    type: 'doughnut',
+    data: { labels: ['Critical','High','Medium','Low'],
+      datasets: [{ data: SEV, backgroundColor: ['#f43f5e','#fb923c','#facc15','#34d399'], borderWidth: 0 }] },
+    options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 14 } } }, cutout: '62%' }
+  });
+
+  new Chart(scanChart, {
+    type: 'bar',
+    data: { labels: ['SAST','SCA','DAST'],
+      datasets: [{ data: SCAN, backgroundColor: ['#60a5fa','#818cf8','#22d3ee'], borderRadius: 6, maxBarThickness: 54 }] },
+    options: { plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: GRID }, ticks: { precision: 0 } } } }
+  });
+
+  new Chart(trendChart, {
+    type: 'line',
+    data: { labels: T_LABELS,
+      datasets: [{ label: 'Critical + High', data: T_CH, borderColor: '#f43f5e',
+        backgroundColor: 'rgba(244,63,94,.12)', fill: true, tension: .35, pointRadius: 3, pointBackgroundColor: '#f43f5e' }] },
+    options: { plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: GRID }, ticks: { precision: 0 } } } }
+  });
+</script>
 
 <%@ include file="_bottom.jspf" %>

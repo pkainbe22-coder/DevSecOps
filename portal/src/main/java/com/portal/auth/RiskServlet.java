@@ -1,6 +1,7 @@
 package com.portal.auth;
 
 import com.portal.api.AiAnalyst;
+import com.portal.dao.CommitDao;
 import com.portal.dao.FindingDao;
 import com.portal.model.Finding;
 
@@ -22,6 +23,7 @@ import java.util.List;
 public class RiskServlet extends HttpServlet {
 
     private final FindingDao findingDao = new FindingDao();
+    private final CommitDao commitDao = new CommitDao();
     private final AiAnalyst claude = new AiAnalyst();
 
     @Override
@@ -43,6 +45,11 @@ public class RiskServlet extends HttpServlet {
         req.setAttribute("exploitable", exploitable);
         req.setAttribute("posture", posture);
         req.setAttribute("postureBand", posture >= 75 ? "ok" : posture >= 45 ? "warn" : "crit");
+
+        // Analytics charts: severity mix, scanner mix, and a per-commit risk trend.
+        req.setAttribute("sevCounts", findingDao.severityCounts());     // [crit,high,med,low]
+        req.setAttribute("scanCounts", findingDao.scanTypeCounts());    // [SAST,SCA,DAST]
+        req.setAttribute("trend", commitDao.findAllForSecurity(null, 10, 0));  // newest-first
 
         // AI Security Analyst state
         req.setAttribute("aiConfigured", claude.isConfigured());

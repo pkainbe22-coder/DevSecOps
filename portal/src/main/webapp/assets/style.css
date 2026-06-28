@@ -260,7 +260,14 @@ td.pkg{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);
 .ai-fix{line-height:1.55;color:#a7f3d0;font-family:'JetBrains Mono',monospace;font-size:12.5px;white-space:pre-wrap;
   background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.18);border-radius:8px;padding:10px 12px;margin-top:4px}
 
+/* --- Security analytics charts --- */
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:6px 4px 4px}
+.chartbox{background:var(--surface2);border:1px solid var(--line2);border-radius:var(--radius-sm);padding:16px 16px 12px}
+.chartbox.wide{grid-column:1 / -1}
+.chartbox h3{margin:0 0 12px;font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+
 @media(max-width:820px){
   .app{grid-template-columns:1fr}
   .sidebar{position:fixed;left:-260px}
+  .charts{grid-template-columns:1fr}
 }

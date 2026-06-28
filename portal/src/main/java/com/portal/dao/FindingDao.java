@@ -138,6 +138,41 @@ public class FindingDao {
         }
     }
 
+    /** Finding counts by severity: [critical, high, medium, low] — for the analytics charts. */
+    public int[] severityCounts() {
+        String sql = """
+            SELECT COALESCE(SUM(CASE WHEN severity='CRITICAL' THEN 1 ELSE 0 END),0) c,
+                   COALESCE(SUM(CASE WHEN severity='HIGH'     THEN 1 ELSE 0 END),0) h,
+                   COALESCE(SUM(CASE WHEN severity='MEDIUM'   THEN 1 ELSE 0 END),0) m,
+                   COALESCE(SUM(CASE WHEN severity='LOW'      THEN 1 ELSE 0 END),0) l
+            FROM findings
+            """;
+        return four(sql, "c", "h", "m", "l");
+    }
+
+    /** Finding counts by scanner: [SAST, SCA, DAST]. */
+    public int[] scanTypeCounts() {
+        String sql = """
+            SELECT COALESCE(SUM(CASE WHEN scan_type='SAST' THEN 1 ELSE 0 END),0) a,
+                   COALESCE(SUM(CASE WHEN scan_type='SCA'  THEN 1 ELSE 0 END),0) b,
+                   COALESCE(SUM(CASE WHEN scan_type='DAST' THEN 1 ELSE 0 END),0) c
+            FROM findings
+            """;
+        int[] r = four(sql + " ", "a", "b", "c", "a");   // reuse helper; 4th col ignored
+        return new int[]{ r[0], r[1], r[2] };
+    }
+
+    private int[] four(String sql, String c1, String c2, String c3, String c4) {
+        try (Connection conn = Db.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            rs.next();
+            return new int[]{ rs.getInt(c1), rs.getInt(c2), rs.getInt(c3), rs.getInt(c4) };
+        } catch (SQLException e) {
+            throw new RuntimeException("aggregate query failed", e);
+        }
+    }
+
     @FunctionalInterface private interface Binder { void bind(PreparedStatement ps) throws SQLException; }
 
     private List<Finding> query(String sql, Binder binder) {
